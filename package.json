@@ -1,6 +1,13 @@
 {
-  "name": "nesorter-monorepo",
+  "name": "@nesorter/monorepo",
   "version": "1.0.0",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "publish-packages": "turbo run build && changeset version && changeset publish"
+  },
   "workspaces": [
     "packages/*"
   ],
