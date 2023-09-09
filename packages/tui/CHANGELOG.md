@@ -1,5 +1,13 @@
 # @nesorter/tui
 
+## 1.0.7
+
+### Patch Changes
+
+- 5252a5b: Tune streaming mechanism
+- Updated dependencies [5252a5b]
+  - @nesorter/lib@1.0.14
+
 ## 1.0.6
 
 ### Patch Changes

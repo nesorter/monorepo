@@ -1,6 +1,6 @@
 {
   "name": "@nesorter/discord-stream-lib",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Discord bot for playing music from web-radio",
   "main": "./build/index.js",
   "scripts": {
