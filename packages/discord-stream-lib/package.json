@@ -16,6 +16,9 @@
   "author": "kugichka <kugi@kugi.club>",
   "license": "MIT",
   "private": false,
+  "publishConfig": {
+    "access": "public"
+  },  
   "bugs": {
     "url": "https://github.com/nesorter/nesorter-discord/issues"
   },
