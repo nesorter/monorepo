@@ -24,7 +24,12 @@ export class FileSystemScanner {
       result = [...result, ...(await this.scan(dir.fullPath))];
     }
 
-    return [...files, ...result].filter(_ => _.fullPath.endsWith('.mp3'));
+    result = [...files, ...result].filter(_ => _.fullPath.endsWith('.mp3'));
+
+    process.env.LOG_INFO === "true" && console.log(`Scanned: '${nextDir};`);
+    process.env.LOG_INFO === "true" && console.log(`Found: ${result.length} files`);
+
+    return result;
   }
 
   async scanDir(dirPath: string): Promise<ScannedItem[]> {

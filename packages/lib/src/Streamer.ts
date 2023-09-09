@@ -1,10 +1,12 @@
 import { BroadcastStream } from './BroadcastStream.js';
 import express, { Express } from 'express';
+import { PassThrough } from 'node:stream';
 
 export class Streamer {
   app: Express;
   broadcast: BroadcastStream;
-  bitrate = 0;
+  input: PassThrough;
+
   sended = 0;
   trackMeta = {
     artist: 'unknown',
@@ -12,13 +14,17 @@ export class Streamer {
   };
 
   constructor(port: number, mountpoint: string) {
-    this.broadcast = new BroadcastStream();
+    this.input = new PassThrough({
+      readableHighWaterMark: 1440 * 40,
+      writableHighWaterMark: 1440 * 40,
+    });
+    this.broadcast = new BroadcastStream(this.input);
     this.app = express();
     this.app.listen(port);
     this.app.disable('x-powered-by');
     this.setupRouting(mountpoint);
 
-    const { plug } = this.broadcast.subscribe(128000, false);
+    const { plug } = this.broadcast.subscribe(false, 0);
     plug.on('data', (chunk) => {
       this.sended += chunk.length;
     });
@@ -38,8 +44,12 @@ export class Streamer {
       };
       res.writeHead(200, headers);
 
-      const { id, plug } = this.broadcast.subscribe(this.bitrate);
-      plug.on('data', (chunk) => res.write(chunk));
+      const { id, plug } = this.broadcast.subscribe();
+      plug.on('data', (chunk) => {
+        res.write(chunk);
+        this.sended += chunk.length;
+        process.env.LOG_DEBUG === "true" && console.log(`Sended chunk (${chunk.length / 1000}kb) to client #${id}`);
+      });
 
       process.env.LOG_INFO === "true" && console.log(`Client #${id} connected`);
       req.socket.on('close', () => {

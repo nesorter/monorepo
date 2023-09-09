@@ -11,7 +11,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nesorter/nesorter-discord.git"
+    "url": "git+https://github.com/nesorter/monorepo.git"
   },
   "author": "kugichka <kugi@kugi.club>",
   "license": "MIT",
@@ -20,9 +20,9 @@
     "access": "public"
   },
   "bugs": {
-    "url": "https://github.com/nesorter/nesorter-discord/issues"
+    "url": "https://github.com/nesorter/monorepo/issues"
   },
-  "homepage": "https://github.com/nesorter/nesorter-discord#readme",
+  "homepage": "https://github.com/nesorter/monorepo#readme",
   "dependencies": {
     "discord.js": "^13.10.3",
     "@discordjs/core": "^1.0.1",

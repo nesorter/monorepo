@@ -1,7 +1,36 @@
-export const config = {
+# nesorter
+## Web radio with scheduling and "playlisting"
+
+### Requirements
+- `ffmpeg` installed on host and available in $PATH
+
+### How to use
+- Init Node.JS package/project
+```bash
+mkdir radio && \
+cd radio && \
+npm init -f
+```
+
+- Make sure your `package.json` contains `"type": "module"`
+
+- Next, install this app
+```bash
+npm install @nesorter/tui@latest
+```
+
+- Next, create `index.js` and paste this code:
+```js
+import { nesorter } from '@nesorter/tui';
+
+nesorter({
   server: {
     port: 3000,
     mount: '/listen',
+  },
+  logger: {
+    debug: false,
+    info: true,
   },
   library: {
     root: '/Users/kugichka/Music/Electronics Random',
@@ -38,4 +67,12 @@ export const config = {
       'random #1', 'random #6', 'random #2', 'random #5', 'random #3', 'random #4'
     ],
   },
-};
+}).then(() => {
+  console.log('Event: server initialized');
+});
+```
+
+- So, start app with:
+```bash
+node index.js
+```

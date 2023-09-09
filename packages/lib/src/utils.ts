@@ -43,6 +43,12 @@ export type InFilePosition = {
   endByte: number;
 }
 
+export const formatNumber = (num: number, afterFloating: number) => {
+  return Math.round((num * (10 * afterFloating))) / (10 * afterFloating);
+}
+
+export const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
 export const sanitizeFsPath = (path: string) => {
   const escapeTargets = [
     ` `, `'`, `>`, `<`, `"`, '(', ')', '&'

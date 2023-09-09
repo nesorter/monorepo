@@ -2,9 +2,9 @@
   "name": "@nesorter/tui",
   "version": "1.0.6",
   "description": "Terminal UI for @nesorter/lib",
-  "repository": "git@github.com:nesorter/nesorter.git",
+  "repository": "git@github.com:nesorter/monorepo.git",
   "bugs": {
-    "url": "https://github.com/nesorter/nesorter/issues"
+    "url": "https://github.com/nesorter/monorepo/issues"
   },
   "keywords": [
     "streaming",
@@ -15,7 +15,7 @@
     "webradio",
     "nesorter"
   ],
-  "homepage": "https://github.com/nesorter/nesorter#readme",
+  "homepage": "https://github.com/nesorter/monorepo#readme",
   "author": "kugichka <kugi@kugi.club>",
   "license": "MIT",
   "private": false,
@@ -30,7 +30,7 @@
   "scripts": {
     "build": "rimraf ./build && tsc",
     "start": "npm run build && node ./build/index.js",
-    "start:dev": "npx nodemon"
+    "dev": "npx nodemon"
   },
   "dependencies": {
     "@nesorter/lib": "*",

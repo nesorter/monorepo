@@ -17,11 +17,12 @@
     "build"
   ],
   "scripts": {
-    "build": "rimraf ./build && tsc"
+    "build": "rimraf ./build && tsc",
+    "dev": "npx nodemon"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nesorter/nesorter-lib.git"
+    "url": "git+https://github.com/nesorter/monorepo.git"
   },
   "author": "kugichka <kugi@kugi.club>",
   "license": "MIT",
@@ -30,9 +31,9 @@
     "access": "public"
   },
   "bugs": {
-    "url": "https://github.com/nesorter/nesorter-lib/issues"
+    "url": "https://github.com/nesorter/monorepo/issues"
   },
-  "homepage": "https://github.com/nesorter/nesorter-lib#readme",
+  "homepage": "https://github.com/nesorter/monorepo#readme",
   "dependencies": {
     "@types/express": "^4.17.17",
     "express": "^4.18.2",

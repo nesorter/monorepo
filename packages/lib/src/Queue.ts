@@ -1,23 +1,20 @@
 import { readFile } from 'fs/promises';
 import { Streamer } from './Streamer.js';
-import { getFramesPositions } from './utils.js';
+import { getFramesPositions, sleep } from './utils.js';
+import { parseBuffer } from 'music-metadata';
 
 const CHUNK_DURATION = 1;
+const CHUNK_OVERLAP_DURATION = 5;
 
 export class Queue {
   files: string[] = [];
   currentFile = 0;
   timeout?: NodeJS.Timeout;
-  readStreamDetacher?: () => void;
 
   constructor(private streamer: Streamer, private onEnd: () => void) { }
 
   stopQueue() {
     process.env.LOG_INFO === "true" && console.log('Called stop queue');
-
-    if (this.readStreamDetacher) {
-      this.readStreamDetacher();
-    }
 
     if (this.timeout) {
       clearTimeout(this.timeout);
@@ -33,7 +30,6 @@ export class Queue {
       return;
     }
 
-    const { parseBuffer } = await import('music-metadata');
     const currentPath = this.files[this.currentFile];
 
     try {
@@ -49,13 +45,18 @@ export class Queue {
         artist: parsedData.common.artist || 'unknown',
         title: parsedData.common.title || 'unknown'
       };
-      this.streamer.broadcast.scheduleChunks(buffer, positions, CHUNK_DURATION);
+
+      process.env.LOG_INFO === "true" && console.log(`Play: [${this.currentFile}/${this.files.length}] ${parsedData.common.artist || 'unknown'} - ${parsedData.common.title || 'unknown'}\nPath: ${currentPath}`);
+
+      for (let position of positions) {
+        this.streamer.input.write(buffer.subarray(position.startByte, position.endByte));
+        await sleep((CHUNK_DURATION * 1000) - CHUNK_OVERLAP_DURATION);
+      }
+
       this.timeout = setTimeout(() => {
         this.currentFile += 1;
         this.startQueue();
-      }, (Number(parsedData.format.duration)) * 1000);
-
-      process.env.LOG_INFO === "true" && console.log(`Play [${this.currentFile}/${this.files.length}] ${currentPath}`);
+      }, 10);
     } catch {
       this.timeout = setTimeout(() => {
         this.currentFile += 1;
