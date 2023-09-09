@@ -1,6 +1,6 @@
 {
   "name": "@nesorter/discord-stream-lib",
-  "version": "1.0.10",
+  "version": "1.0.12",
   "description": "Discord bot for playing music from web-radio",
   "main": "./build/index.js",
   "scripts": {
@@ -18,7 +18,7 @@
   "private": false,
   "publishConfig": {
     "access": "public"
-  },  
+  },
   "bugs": {
     "url": "https://github.com/nesorter/nesorter-discord/issues"
   },
