@@ -1,0 +1,44 @@
+{
+  "name": "@nesorter/tui",
+  "version": "1.0.3",
+  "description": "Terminal UI for @nesorter/lib",
+  "repository": "git@github.com:nesorter/nesorter.git",
+  "bugs": {
+    "url": "https://github.com/nesorter/nesorter/issues"
+  },
+  "keywords": [
+    "streaming",
+    "icecast",
+    "server",
+    "audio",
+    "lame",
+    "webradio",
+    "nesorter"
+  ],
+  "homepage": "https://github.com/nesorter/nesorter#readme",
+  "author": "kugichka <kugi@kugi.club>",
+  "license": "MIT",
+  "private": false,
+  "type": "module",
+  "main": "./build/index.js",
+  "files": [
+    "build"
+  ],
+  "scripts": {
+    "build": "rimraf ./build && tsc",
+    "start": "npm run build && node ./build/index.js",
+    "start:dev": "npx nodemon"
+  },
+  "dependencies": {
+    "@nesorter/lib": "*",
+    "@types/express": "^4.17.17",
+    "@types/node": "^20.5.8",
+    "console-gui-tools": "^3.1.1",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "nodemon": "^3.0.1",
+    "rimraf": "^5.0.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}
