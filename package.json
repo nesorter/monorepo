@@ -6,7 +6,7 @@
     "access": "public"
   },
   "scripts": {
-    "pre-publish-packages": "changeset && git add . && git commit",
+    "pre-publish-packages": "changeset",
     "publish-packages": "turbo run build && changeset version && changeset publish"
   },
   "workspaces": [
