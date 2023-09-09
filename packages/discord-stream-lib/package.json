@@ -1,6 +1,6 @@
 {
   "name": "@nesorter/discord-stream-lib",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Discord bot for playing music from web-radio",
   "main": "./build/index.js",
   "scripts": {
@@ -17,8 +17,8 @@
   "license": "MIT",
   "private": false,
   "bugs": {
-      "url": "https://github.com/nesorter/nesorter-discord/issues"
-    },
+    "url": "https://github.com/nesorter/nesorter-discord/issues"
+  },
   "homepage": "https://github.com/nesorter/nesorter-discord#readme",
   "dependencies": {
     "discord.js": "^13.10.3",
