@@ -1,0 +1,63 @@
+{
+  "name": "@nesorter/discord-stream-lib",
+  "version": "1.0.9",
+  "description": "Discord bot for playing music from web-radio",
+  "main": "./build/index.js",
+  "scripts": {
+    "build": "rimraf ./build && tsc"
+  },
+  "files": [
+    "build"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nesorter/nesorter-discord.git"
+  },
+  "author": "kugichka <kugi@kugi.club>",
+  "license": "MIT",
+  "private": false,
+  "bugs": {
+      "url": "https://github.com/nesorter/nesorter-discord/issues"
+    },
+  "homepage": "https://github.com/nesorter/nesorter-discord#readme",
+  "dependencies": {
+    "discord.js": "^13.10.3",
+    "@discordjs/core": "^1.0.1",
+    "@discordjs/voice": "^0.16.0",
+    "@types/node": "^20.5.9",
+    "libsodium-wrappers": "^0.7.11",
+    "prism-media": "^1.3.5",
+    "typescript": "^5.2.2",
+    "rimraf": "^5.0.1"
+  },
+  "keywords": [
+    "bot",
+    "voice",
+    "audio",
+    "media",
+    "stream",
+    "player",
+    "discord",
+    "discord.js",
+    "discordbot",
+    "discordvoice",
+    "discordaudio",
+    "discordmusic",
+    "discordmedia",
+    "discordstream",
+    "discordplayer",
+    "discord-bot",
+    "discord-voice",
+    "discord-audio",
+    "discord-music",
+    "discord-media",
+    "discord-stream",
+    "discord-player",
+    "streaming",
+    "icecast",
+    "server",
+    "music",
+    "webradio",
+    "nesorter"
+  ]
+}
