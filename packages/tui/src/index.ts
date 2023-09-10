@@ -40,7 +40,7 @@ export const nesorter = async (config: Config) => {
     const scanner = new FileSystemScanner(playlist.path);
     const files = shuffle(await scanner.scan());
 
-    ev.on('end', () => {
+    ev.once('end', () => {
       index += 1;
       if (index === playlists.length) {
         playlists = shuffle(config.playlists);
