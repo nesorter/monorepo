@@ -1,5 +1,11 @@
 # @nesorter/tui
 
+## 1.0.8
+
+### Patch Changes
+
+- 95e7848: Fix playlist duplication
+
 ## 1.0.7
 
 ### Patch Changes
