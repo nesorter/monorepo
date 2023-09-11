@@ -1,5 +1,11 @@
 # @nesorter/lib
 
+## 1.0.15
+
+### Patch Changes
+
+- c9e937a: Add linting
+
 ## 1.0.14
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @nesorter/discord-stream-lib
 
+## 1.0.14
+
+### Patch Changes
+
+- c9e937a: Add linting
+
 ## 1.0.13
 
 ### Patch Changes

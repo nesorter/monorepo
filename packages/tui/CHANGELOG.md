@@ -1,5 +1,13 @@
 # @nesorter/tui
 
+## 1.0.9
+
+### Patch Changes
+
+- c9e937a: Add linting
+- Updated dependencies [c9e937a]
+  - @nesorter/lib@1.0.15
+
 ## 1.0.8
 
 ### Patch Changes
