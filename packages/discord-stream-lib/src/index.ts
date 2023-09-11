@@ -18,30 +18,40 @@ export type Config = {
   BOT_SELF_RENAME_TO_NAME: string;
   VOICE_CHAT_ID: string;
   STREAM_MOUNTPOINT: string;
-  onTrackMetadataRequested: () => Promise<{ title: string, artist: string }>;
+  onTrackMetadataRequested: () => Promise<{ title: string; artist: string }>;
 };
 
 export const Bot = async (config: Config) => {
   const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildVoiceStates],
+    intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.GuildVoiceStates,
+    ],
   });
 
   const audioPlayer = createAudioPlayer({
     behaviors: {
-      noSubscriber: NoSubscriberBehavior.Play,
       maxMissedFrames: 5000,
+      noSubscriber: NoSubscriberBehavior.Play,
     },
   });
 
   const audioResource = createAudioResource(
     new prism.FFmpeg({
       args: [
-        '-analyzeduration', '0',
-        '-loglevel', '0',
-        '-i', config.STREAM_MOUNTPOINT,
-        '-f', 'opus',
-        '-ar', '48000',
-        '-ac', '2',
+        '-analyzeduration',
+        '0',
+        '-loglevel',
+        '0',
+        '-i',
+        config.STREAM_MOUNTPOINT,
+        '-f',
+        'opus',
+        '-ar',
+        '48000',
+        '-ac',
+        '2',
       ],
     }),
     {
@@ -52,10 +62,10 @@ export const Bot = async (config: Config) => {
 
   async function connectToChannel(channel: VoiceChannel) {
     const connection = joinVoiceChannel({
-      channelId: channel.id,
-      guildId: channel.guild.id,
       // @ts-ignore
       adapterCreator: channel.guild.voiceAdapterCreator,
+      channelId: channel.id,
+      guildId: channel.guild.id,
     });
 
     try {
@@ -70,7 +80,8 @@ export const Bot = async (config: Config) => {
   client.on(Events.CLIENT_READY, () => {
     audioPlayer.play(audioResource);
 
-    client.channels.fetch(config.VOICE_CHAT_ID)
+    client.channels
+      .fetch(config.VOICE_CHAT_ID)
       .then(async (channel) => {
         try {
           const connection = await connectToChannel(channel as VoiceChannel);
@@ -78,26 +89,30 @@ export const Bot = async (config: Config) => {
         } catch (error) {
           console.error(error);
         }
-      });
+      })
+      .catch(console.error);
   });
 
   await client.login(config.BOT_TOKEN);
   await client.user?.setUsername(config.BOT_SELF_RENAME_TO_NAME);
 
   setInterval(() => {
-    config.onTrackMetadataRequested().then((metas) => {
-      client.user?.setPresence({
-        status: 'online',
-        afk: true,
-        activities: [
-          {
-            name: `[${metas.artist} - ${metas.title}] @ [${config.STREAM_MOUNTPOINT}]`,
-            type: 'PLAYING'
-          },
-        ],
-      });
-    });
+    config
+      .onTrackMetadataRequested()
+      .then((metas) => {
+        client.user?.setPresence({
+          activities: [
+            {
+              name: `[${metas.artist} - ${metas.title}] @ [${config.STREAM_MOUNTPOINT}]`,
+              type: 'PLAYING',
+            },
+          ],
+          afk: true,
+          status: 'online',
+        });
+      })
+      .catch(console.error);
   }, 5000);
 
-  return { client, audioPlayer, audioResource };
+  return { audioPlayer, audioResource, client };
 };

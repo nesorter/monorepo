@@ -1,0 +1,69 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "sourceType": "module",
+    "project": "./tsconfig.json"
+  },
+  "env": {
+    "browser": false,
+    "node": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "plugin:prettier/recommended"
+  ],
+  "plugins": [
+    "@typescript-eslint",
+    "prettier",
+    "perfectionist",
+    "json-format",
+    "eslint-plugin-no-cyrillic-string"
+  ],
+  "ignorePatterns": [
+    "**/build",
+    "**/.turbo"
+  ],
+  "overrides": [
+    {
+      "files": ["./packages/lib/**/*"],
+      "parserOptions": {
+        "project": "./packages/lib/tsconfig.json",
+        "ecmaVersion": 2020
+      }
+    },
+    {
+      "files": ["./packages/tui/**/*"],
+      "parserOptions": {
+        "project": "./packages/tui/tsconfig.json",
+        "ecmaVersion": 2020
+      }
+    },
+    {
+      "files": ["./packages/discord-stream-lib/**/*"],
+      "parserOptions": {
+        "project": "./packages/discord-stream-lib/tsconfig.json",
+        "ecmaVersion": 2020
+      }
+    }
+  ],
+  "rules": {
+    "prettier/prettier": "warn",
+    "no-cyrillic-string/no-cyrillic-string": "warn",
+    "perfectionist/sort-objects": [
+      "error",
+      {
+        "type": "natural",
+        "order": "asc"
+      }
+    ],
+    "import/prefer-default-export": "off",
+    "import/no-unresolved": "off",
+    "camelcase": "off",
+    "@typescript-eslint/ban-ts-comment": "off",
+    "@typescript-eslint/restrict-template-expressions": "off",
+    "@typescript-eslint/no-misused-promises": "off"
+  }
+}

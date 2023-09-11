@@ -25,7 +25,7 @@ export class Streamer {
     this.setupRouting(mountpoint);
 
     const { plug } = this.broadcast.subscribe(false, 0);
-    plug.on('data', (chunk) => {
+    plug.on('data', (chunk: Buffer) => {
       this.sended += chunk.length;
     });
   }
@@ -37,23 +37,24 @@ export class Streamer {
 
     this.app.get(mountpoint, (req, res) => {
       const headers = {
-        "Content-Type": "audio/mp3",
-        "Connection": "keep-alive",
-        "Cache-Control": "no-cache, no-store",
-        "Pragma": "no-cache",
+        'Cache-Control': 'no-cache, no-store',
+        Connection: 'keep-alive',
+        'Content-Type': 'audio/mp3',
+        Pragma: 'no-cache',
       };
       res.writeHead(200, headers);
 
       const { id, plug } = this.broadcast.subscribe();
-      plug.on('data', (chunk) => {
+      plug.on('data', (chunk: Buffer) => {
         res.write(chunk);
         this.sended += chunk.length;
-        process.env.LOG_DEBUG === "true" && console.log(`DEBUG: Sended chunk (${chunk.length / 1000}kb) to client #${id}`);
+        process.env.LOG_DEBUG === 'true' &&
+          console.log(`DEBUG: Sended chunk (${chunk.length / 1000}kb) to client #${id}`);
       });
 
-      process.env.LOG_INFO === "true" && console.log(`Event: Client #${id} connected`);
+      process.env.LOG_INFO === 'true' && console.log(`Event: Client #${id} connected`);
       req.socket.on('close', () => {
-        process.env.LOG_INFO === "true" && console.log(`Event: Client #${id} disconnects`);
+        process.env.LOG_INFO === 'true' && console.log(`Event: Client #${id} disconnects`);
         plug.emit('unpipe');
       });
     });

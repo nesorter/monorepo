@@ -41,21 +41,19 @@ export type InFilePosition = {
   second: number;
   startByte: number;
   endByte: number;
-}
+};
 
 export const formatNumber = (num: number, afterFloating: number) => {
-  return Math.round((num * (10 * afterFloating))) / (10 * afterFloating);
-}
+  return Math.round(num * (10 * afterFloating)) / (10 * afterFloating);
+};
 
 export const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 export const sanitizeFsPath = (path: string) => {
-  const escapeTargets = [
-    ` `, `'`, `>`, `<`, `"`, '(', ')', '&'
-  ];
+  const escapeTargets = [` `, `'`, `>`, `<`, `"`, '(', ')', '&'];
 
   return escapeTargets.reduce((acc, cur) => acc.replaceAll(cur, `\\${cur}`), path);
-}
+};
 
 export const shuffle = <T>(array: T[]) => {
   for (let i = array.length - 1; i > 0; i--) {
@@ -77,7 +75,7 @@ export const execAsync = (command: string) => {
 export const spawnAsync = (command: string): Promise<string> => {
   return new Promise((res, req) => {
     let result = '';
-    let child = spawn(command, { shell: true });
+    const child = spawn(command, { shell: true });
     child.stdout.on('data', (data) => {
       result += data;
     });
@@ -92,24 +90,29 @@ export const getFramesPositions = async (filePath: string, chunkDuration: number
     .replaceAll('\n', ' _ ')
     .replaceAll('[/FRAME]', '')
     .split('[FRAME]')
-    .filter(_ => _.length)
-    .map(_ => Object.fromEntries(_.split(' _ ')
-      .filter(_ => _.length)
-      .map(_ => {
-        // @ts-ignore
-        const [_origin, key, value] = /(.*)=(.*)/.exec(_);
-        const valueIsNumber = !Number.isNaN(Number(value));
-        return [key, valueIsNumber ? Number(value) : value];
-      })) as FFProbeFrame
+    .filter((_) => _.length)
+    .map(
+      (_) =>
+        Object.fromEntries(
+          _.split(' _ ')
+            .filter((_) => _.length)
+            .map((_) => {
+              // @ts-ignore
+              const [origin, key, value] = /(.*)=(.*)/.exec(_);
+              const valueIsNumber = !Number.isNaN(Number(value));
+              const valueConverted = valueIsNumber ? Number(value) : (value as string);
+              return [key, origin ? valueConverted : ''];
+            }),
+        ) as FFProbeFrame,
     )
-    .filter(_ => _.media_type === 'audio');
+    .filter((_) => _.media_type === 'audio');
 
   const positions: InFilePosition[] = [];
 
   let second = 0;
   let timeAccumulator = 0;
   let startByte = 0;
-  for (let frame of chunks) {
+  for (const frame of chunks) {
     if (timeAccumulator === 0) {
       startByte = Number(frame.pkt_pos);
     }
@@ -117,7 +120,11 @@ export const getFramesPositions = async (filePath: string, chunkDuration: number
     timeAccumulator += Number(frame.pkt_duration_time);
 
     if (timeAccumulator > chunkDuration) {
-      positions.push({ second, startByte, endByte: Number(frame.pkt_pos) + Number(frame.pkt_size) });
+      positions.push({
+        endByte: Number(frame.pkt_pos) + Number(frame.pkt_size),
+        second,
+        startByte,
+      });
       second += 1;
       timeAccumulator = 0;
     }

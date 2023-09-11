@@ -1,17 +1,18 @@
 import stream from 'stream';
 
 export class BroadcastStream {
+  chunksTotal = 0;
   sinksTotal = 0;
-  sinks: { id: number, plug: stream.PassThrough, shouldLog: boolean }[] = [];
+  sinks: { id: number; plug: stream.PassThrough; shouldLog: boolean }[] = [];
 
   constructor(private readable: stream.PassThrough | stream.Readable) {
-    let count = 0;
-
     this.readable.on('data', (chunk) => {
-      count += 1;
+      this.chunksTotal += 1;
 
-      for (let sink of this.sinks) {
-        process.env.LOG_DEBUG === "true" && sink.shouldLog && console.log(`DEBUG: Send chunk #${count} to sink #${sink.id}`);
+      for (const sink of this.sinks) {
+        process.env.LOG_DEBUG === 'true' &&
+          sink.shouldLog &&
+          console.log(`DEBUG: Send chunk #${this.chunksTotal} to sink #${sink.id}`);
         sink.plug.write(chunk);
       }
     });
@@ -24,7 +25,7 @@ export class BroadcastStream {
     });
 
     plug.on('unpipe', () => {
-      this.sinks = this.sinks.filter(_ => _.id !== id);
+      this.sinks = this.sinks.filter((_) => _.id !== id);
     });
 
     this.sinks.push({ id, plug, shouldLog });

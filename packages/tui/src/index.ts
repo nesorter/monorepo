@@ -24,16 +24,15 @@ export type Config = {
 };
 
 export const nesorter = async (config: Config) => {
-  process.env.LOG_INFO = config.logger.info ? "true" : "false";
-  process.env.LOG_DEBUG = config.logger.debug ? "true" : "false";
+  process.env.LOG_INFO = config.logger.info ? 'true' : 'false';
+  process.env.LOG_DEBUG = config.logger.debug ? 'true' : 'false';
 
+  const ev = new EventEmitter();
   const streamer = new Streamer(config.server.port, config.server.mount);
 
   let playlists = shuffle(config.playlists);
-
-  let queue: Queue;
   let index = 0;
-  const ev = new EventEmitter();
+
   const scheduleQueue = async () => {
     const playlist = playlists[index];
     const thisQueue = new Queue(streamer, () => ev.emit('end'));
@@ -48,22 +47,28 @@ export const nesorter = async (config: Config) => {
       }
 
       thisQueue.stopQueue();
-      setTimeout(() => scheduleQueue(), 10);
+      setTimeout(() => {
+        scheduleQueue()
+          .then(() => null)
+          .catch(console.error);
+      }, 10);
     });
 
-    for (let file of files) {
+    for (const file of files) {
       thisQueue.add(file.fullPath);
     }
 
     await thisQueue.startQueue();
-    queue = thisQueue;
-  }
+  };
 
-  scheduleQueue();
+  await scheduleQueue();
 
   setInterval(() => {
     console.log(
-      `Sended: ${formatNumber(streamer.sended / 1024, 2)}kb, ${formatNumber(streamer.sended / (1024 * 1024), 2)}mb, ${formatNumber(streamer.sended / (1024 * 1024 * 1024), 2)}gb`
+      `Sended: ${formatNumber(streamer.sended / 1024, 2)}kb, ${formatNumber(
+        streamer.sended / (1024 * 1024),
+        2,
+      )}mb, ${formatNumber(streamer.sended / (1024 * 1024 * 1024), 2)}gb`,
     );
   }, 60000);
-}
+};
