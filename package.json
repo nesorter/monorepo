@@ -11,7 +11,8 @@
   "scripts": {
     "pre-publish-packages": "changeset",
     "publish-packages": "npm run build && changeset version && changeset publish",
-    "build": "eslint packages/**/*.ts && turbo run build",
+    "lint": "eslint packages/**/*.ts",
+    "build": "turbo run build",
     "dev": "turbo run dev"
   },
   "workspaces": [

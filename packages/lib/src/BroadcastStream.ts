@@ -10,9 +10,7 @@ export class BroadcastStream {
       this.chunksTotal += 1;
 
       for (const sink of this.sinks) {
-        process.env.LOG_DEBUG === 'true' &&
-          sink.shouldLog &&
-          console.log(`DEBUG: Send chunk #${this.chunksTotal} to sink #${sink.id}`);
+        process.env.LOG_DEBUG === 'true' && sink.shouldLog && console.log(`DEBUG: Broadcast: Send chunk #${this.chunksTotal} to sink #${sink.id}`);
         sink.plug.write(chunk);
       }
     });

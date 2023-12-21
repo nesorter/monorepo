@@ -133,3 +133,5 @@ dist
 build
 .turbo
 .fleet
+.idea
+debug

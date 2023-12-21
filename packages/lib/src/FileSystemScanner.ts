@@ -34,7 +34,7 @@ export class FileSystemScanner {
     return result;
   }
 
-  async scanDir(dirPath: string): Promise<ScannedItem[]> {
+  private async scanDir(dirPath: string): Promise<ScannedItem[]> {
     const entriesPaths = await readdir(resolve(this.rootDir, dirPath));
     return Promise.all(
       entriesPaths.map(async (filePath) => {

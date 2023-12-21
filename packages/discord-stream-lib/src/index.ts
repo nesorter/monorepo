@@ -1,15 +1,7 @@
 import prism from 'prism-media';
 import { Client, Constants, VoiceChannel } from 'discord.js';
 import { GatewayIntentBits } from 'discord-api-types/v10';
-import {
-  NoSubscriberBehavior,
-  StreamType,
-  createAudioPlayer,
-  createAudioResource,
-  entersState,
-  VoiceConnectionStatus,
-  joinVoiceChannel,
-} from '@discordjs/voice';
+import { NoSubscriberBehavior, StreamType, createAudioPlayer, createAudioResource, entersState, VoiceConnectionStatus, joinVoiceChannel } from '@discordjs/voice';
 
 const { Events } = Constants;
 
@@ -23,11 +15,7 @@ export type Config = {
 
 export const Bot = async (config: Config) => {
   const client = new Client({
-    intents: [
-      GatewayIntentBits.Guilds,
-      GatewayIntentBits.GuildMessages,
-      GatewayIntentBits.GuildVoiceStates,
-    ],
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildVoiceStates],
   });
 
   const audioPlayer = createAudioPlayer({
@@ -39,20 +27,7 @@ export const Bot = async (config: Config) => {
 
   const audioResource = createAudioResource(
     new prism.FFmpeg({
-      args: [
-        '-analyzeduration',
-        '0',
-        '-loglevel',
-        '0',
-        '-i',
-        config.STREAM_MOUNTPOINT,
-        '-f',
-        'opus',
-        '-ar',
-        '48000',
-        '-ac',
-        '2',
-      ],
+      args: ['-analyzeduration', '0', '-loglevel', '0', '-i', config.STREAM_MOUNTPOINT, '-f', 'opus', '-ar', '48000', '-ac', '2'],
     }),
     {
       inputType: StreamType.OggOpus,

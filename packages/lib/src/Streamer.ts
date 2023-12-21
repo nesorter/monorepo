@@ -48,13 +48,12 @@ export class Streamer {
       plug.on('data', (chunk: Buffer) => {
         res.write(chunk);
         this.sended += chunk.length;
-        process.env.LOG_DEBUG === 'true' &&
-          console.log(`DEBUG: Sended chunk (${chunk.length / 1000}kb) to client #${id}`);
+        process.env.LOG_DEBUG === 'true' && console.log(`DEBUG: Streamer: Sended chunk (${chunk.length / 1000}kb) to client #${id}`);
       });
 
-      process.env.LOG_INFO === 'true' && console.log(`Event: Client #${id} connected`);
+      process.env.LOG_INFO === 'true' && console.log(`Streamer: Event, Client #${id} connected`);
       req.socket.on('close', () => {
-        process.env.LOG_INFO === 'true' && console.log(`Event: Client #${id} disconnects`);
+        process.env.LOG_INFO === 'true' && console.log(`Streamer: Event, Client #${id} disconnects`);
         plug.emit('unpipe');
       });
     });
