@@ -6,6 +6,7 @@ export class Streamer {
   app: Express;
   broadcast: BroadcastStream;
   input: PassThrough;
+  port: number;
 
   sended = 0;
   trackMeta = {
@@ -14,13 +15,13 @@ export class Streamer {
   };
 
   constructor(port: number, mountpoint: string) {
+    this.port = port;
     this.input = new PassThrough({
       readableHighWaterMark: 1440 * 40,
       writableHighWaterMark: 1440 * 40,
     });
     this.broadcast = new BroadcastStream(this.input);
     this.app = express();
-    this.app.listen(port);
     this.app.disable('x-powered-by');
     this.setupRouting(mountpoint);
 
@@ -28,6 +29,10 @@ export class Streamer {
     plug.on('data', (chunk: Buffer) => {
       this.sended += chunk.length;
     });
+  }
+
+  listen() {
+    this.app.listen(this.port);
   }
 
   setupRouting(mountpoint: string) {

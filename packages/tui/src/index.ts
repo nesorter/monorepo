@@ -1,171 +1,157 @@
-import startOfDay from 'date-fns/startOfDay';
-import getUnixTime from 'date-fns/getUnixTime';
-import { secondsInDay } from 'date-fns';
 import { Streamer, FileSystemScanner, Queue, shuffle, formatNumber, ScannedItem } from '@nesorter/lib';
 import { EventEmitter } from 'stream';
+import { Config } from './type/Config';
+import { getSecondsFromStartOfDay } from './utils/getSecondsFromStartOfDay';
 
-export type Config = {
-  server: {
-    port: number;
-    mount: string;
-  };
-  library: {
-    root: string;
-  };
-  playlists: {
-    id: string;
-    path: string;
-  }[];
-  maxScheduledItems: number;
-  schedule: (
-    | {
-        type: 'playlist';
-        /* seconds from day start */
-        startAt: number;
-        /* seconds */
-        duration: number;
-        playlistId: string;
-        shouldShuffle?: boolean;
-      }
-    | {
-        type: 'sequence';
-        /* seconds from day start */
-        startAt: number;
-        /* seconds */
-        duration: number;
-        sequence: {
-          up: {
-            duration: number;
-            playlistId: string;
-            shouldShuffle?: boolean;
-          };
-          down: {
-            duration: number;
-            playlistId: string;
-            shouldShuffle?: boolean;
-          };
-        };
-      }
-  )[];
-  logger: {
-    debug: boolean;
-    info: boolean;
-  };
-};
+export class TUI {
+  public config: Config;
+  public streamer: Streamer;
 
-let startPoint = startOfDay(new Date());
-const getSecondsFromStartOfDay = () => {
-  let offset = getUnixTime(new Date()) - getUnixTime(startPoint);
-  if (offset > secondsInDay) {
-    startPoint = startOfDay(new Date());
-    offset = 0;
+  private playlistIds: string[] = [];
+  private playlists: Record<string, ScannedItem[]> = {};
+
+  private startDelay = 500; // ms
+  private currentStartOffset = 0;
+  private currentStopOffset = 0;
+  private scheduleIndexes: number[] = [];
+
+  public static create(config: Config) {
+    return new TUI(config);
   }
 
-  return offset;
-};
+  constructor(config: Config) {
+    // culhax bcoz @nesorter/lib design
+    process.env.LOG_INFO = config.logger.info ? 'true' : 'false';
+    process.env.LOG_DEBUG = config.logger.debug ? 'true' : 'false';
 
-export const nesorter = async (config: Config) => {
-  process.env.LOG_INFO = config.logger.info ? 'true' : 'false';
-  process.env.LOG_DEBUG = config.logger.debug ? 'true' : 'false';
+    this.config = config;
+    this.streamer = new Streamer(config.server.port, config.server.mount);
+    this.playlistIds = config.playlists.map((_) => _.id);
 
-  const scanner = new FileSystemScanner(config.library.root);
-  const streamer = new Streamer(config.server.port, config.server.mount);
-
-  const playlistIds = config.playlists.map((_) => _.id);
-  const playlists = Object.fromEntries(
-    await Promise.all(
-      config.playlists.map(async ({ id, path }) => {
-        const content = await scanner.scan(path);
-        return [id, content] as [string, ScannedItem[]];
-      }),
-    ),
-  );
-
-  // check that playlistIds in schedule are correct
-  config.schedule.forEach((item, index) => {
-    if (item.type === 'playlist') {
-      if (!playlistIds.includes(item.playlistId)) {
-        throw new Error(`Wrong playlistId for schedule #${index}, startAt: ${item.startAt}`);
-      }
-
-      return;
-    }
-
-    if (item.type === 'sequence') {
-      if (!playlistIds.includes(item.sequence.down.playlistId)) {
-        throw new Error(`Wrong playlistId for schedule #${index}, startAt: ${item.startAt}, sequence stage: down`);
-      }
-
-      if (!playlistIds.includes(item.sequence.up.playlistId)) {
-        throw new Error(`Wrong playlistId for schedule #${index}, startAt: ${item.startAt}, sequence stage: up`);
-      }
-
-      return;
-    }
-  });
-
-  // skip schedule items that in past, but find playlist that should play right now
-  // and some calculations for correct offsets
-  const secondsFromStartOfDay = getSecondsFromStartOfDay();
-  let currentScheduleItemIndex = config.schedule.findIndex((item) => item.startAt <= secondsFromStartOfDay && item.startAt + item.duration > secondsFromStartOfDay);
-  const scheduleIndexes = [] as number[];
-
-  let counter = 0;
-  while (counter < config.maxScheduledItems) {
-    scheduleIndexes.push(currentScheduleItemIndex);
-
-    currentScheduleItemIndex += 1;
-    counter += 1;
-
-    if (currentScheduleItemIndex === config.schedule.length) {
-      currentScheduleItemIndex = 0;
-    }
+    this.validateConfig();
+    this.enableLogging();
   }
 
-  const startDelay = 500;
-  let currentStartOffset = startDelay;
-  let currentStopOffset = startDelay + (config.schedule[scheduleIndexes[0]].startAt + config.schedule[scheduleIndexes[0]].duration) - secondsFromStartOfDay;
+  public async start() {
+    // entry point
+    await this.hotbootPlaylists();
+    this.calculateSchedule();
+    this.fillSchedule();
+    this.streamer.listen();
+  }
 
-  // start sheduling
-  scheduleIndexes.forEach((scheduleIndex, index) => {
-    const schedule = config.schedule[scheduleIndex];
-    const eventEmitter = new EventEmitter();
-    const queue = new Queue(streamer, () => eventEmitter.emit('end'));
+  private validateConfig() {
+    // TODO: validate config by schema
+    // TODO: validate playlist paths in config
+    // TODO: validate schedule durations
 
-    if (schedule.type === 'playlist') {
-      let files = playlists[schedule.playlistId].map((_) => _.fullPath);
-      if (schedule.shouldShuffle) {
-        files = shuffle(files);
-      }
-
-      queue.add(files);
-      setTimeout(() => queue.startQueue(currentStopOffset), currentStartOffset);
-      setTimeout(() => queue.stopQueue(), currentStopOffset);
-
-      eventEmitter.on('end', () => {
-        if (schedule.shouldShuffle) {
-          queue.add(shuffle(files));
+    // check that playlistIds in schedule are correct
+    this.config.schedule.forEach((item, index) => {
+      if (item.type === 'playlist') {
+        if (!this.playlistIds.includes(item.playlistId)) {
+          throw new Error(`Wrong playlistId for schedule #${index}, startAt: ${item.startAt}`);
         }
 
-        queue.replayQueue(currentStopOffset).catch(console.error);
-      });
-    } else {
-      // todo for sequences
+        return;
+      }
+
+      if (item.type === 'sequence') {
+        if (!this.playlistIds.includes(item.sequence.down.playlistId)) {
+          throw new Error(`Wrong playlistId for schedule #${index}, startAt: ${item.startAt}, sequence stage: down`);
+        }
+
+        if (!this.playlistIds.includes(item.sequence.up.playlistId)) {
+          throw new Error(`Wrong playlistId for schedule #${index}, startAt: ${item.startAt}, sequence stage: up`);
+        }
+
+        return;
+      }
+    });
+  }
+
+  private enableLogging() {
+    // logging network usage
+    setInterval(() => {
+      const kb = formatNumber(this.streamer.sended / 1024, 2);
+      const mb = formatNumber(this.streamer.sended / (1024 * 1024), 2);
+      const gb = formatNumber(this.streamer.sended / (1024 * 1024 * 1024), 2);
+
+      console.log(`Sended: ${kb}kb, ${mb}mb, ${gb}gb`);
+    }, 60000);
+  }
+
+  private async hotbootPlaylists() {
+    // load files paths of playlists into memory
+    const scanner = new FileSystemScanner(this.config.library.root);
+    this.playlists = Object.fromEntries(
+      await Promise.all(
+        this.config.playlists.map(async ({ id, path }) => {
+          const content = await scanner.scan(path);
+          return [id, content] as [string, ScannedItem[]];
+        }),
+      ),
+    );
+  }
+
+  private calculateSchedule() {
+    // skip schedule items that in past, but find playlist that should play right now
+    // and some calculations for correct offsets
+    // than make "schedule for schedule"
+    const secondsFromStartOfDay = getSecondsFromStartOfDay();
+    let currentScheduleItemIndex = this.config.schedule.findIndex((item) => item.startAt <= secondsFromStartOfDay && item.startAt + item.duration > secondsFromStartOfDay);
+
+    let counter = 0;
+    while (counter < this.config.maxScheduledItems) {
+      this.scheduleIndexes.push(currentScheduleItemIndex);
+
+      currentScheduleItemIndex += 1;
+      counter += 1;
+
+      if (currentScheduleItemIndex === this.config.schedule.length) {
+        currentScheduleItemIndex = 0;
+      }
     }
 
-    const nextSchedule = scheduleIndexes[index + 1];
-    if (nextSchedule) {
-      currentStartOffset = startDelay + currentStopOffset;
-      currentStopOffset = startDelay + schedule.duration;
-    }
-  });
+    const initialScheduleItem = this.config.schedule[this.scheduleIndexes[0]];
+    const startDelay = 500;
+    this.currentStartOffset = startDelay;
+    this.currentStopOffset = startDelay + (initialScheduleItem.startAt + initialScheduleItem.duration) - secondsFromStartOfDay;
+  }
 
-  // logging network usage
-  setInterval(() => {
-    const kb = formatNumber(streamer.sended / 1024, 2);
-    const mb = formatNumber(streamer.sended / (1024 * 1024), 2);
-    const gb = formatNumber(streamer.sended / (1024 * 1024 * 1024), 2);
+  private fillSchedule() {
+    // put tasks about starting and stoping schedule items into built-in timers
+    const eventEmitter = new EventEmitter();
 
-    console.log(`Sended: ${kb}kb, ${mb}mb, ${gb}gb`);
-  }, 60000);
-};
+    this.scheduleIndexes.forEach((scheduleIndex, index) => {
+      const schedule = this.config.schedule[scheduleIndex];
+      const queue = new Queue(this.streamer, () => eventEmitter.emit(`end-${index}`));
+
+      if (schedule.type === 'playlist') {
+        let files = this.playlists[schedule.playlistId].map((_) => _.fullPath);
+        if (schedule.shouldShuffle) {
+          files = shuffle(files);
+        }
+
+        queue.add(files);
+        setTimeout(() => queue.startQueue(this.currentStopOffset), this.currentStartOffset);
+        setTimeout(() => queue.stopQueue(), this.currentStopOffset);
+
+        eventEmitter.on(`end-${index}`, () => {
+          if (schedule.shouldShuffle) {
+            queue.add(shuffle(files));
+          }
+
+          queue.replayQueue(this.currentStopOffset).catch(console.error);
+        });
+      } else {
+        // todo for sequences
+      }
+
+      const nextSchedule = this.scheduleIndexes[index + 1];
+      if (nextSchedule) {
+        this.currentStartOffset = this.startDelay + this.currentStopOffset;
+        this.currentStopOffset = this.startDelay + schedule.duration;
+      }
+    });
+  }
+}
