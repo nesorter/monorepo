@@ -15,8 +15,5 @@
     "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": true,
-  },
-  "exclude": [
-    "./test/**/*"
-  ]
+  }
 }

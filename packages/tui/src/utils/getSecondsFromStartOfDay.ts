@@ -1,6 +1,4 @@
-import startOfDay from 'date-fns/startOfDay';
-import getUnixTime from 'date-fns/getUnixTime';
-import { secondsInDay } from 'date-fns';
+import { secondsInDay, startOfDay, getUnixTime } from 'date-fns';
 
 let startPoint = startOfDay(new Date());
 export const getSecondsFromStartOfDay = () => {

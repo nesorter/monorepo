@@ -31,32 +31,7 @@
     "build": "rimraf ./build && tsc",
     "start": "npm run build && node ./build/index.js",
     "dev": "npx nodemon",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "./",
-    "testMatch": [
-      "**/test/**/*.spec.ts"
-    ],
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "coverageReporters": [
-      "text",
-      "html"
-    ],
-    "collectCoverageFrom": [
-      "**/src/**/**/*.{ts,tsx,js,jsx}"
-    ],
-    "coverageDirectory": "/test/.coverage",
-    "testEnvironment": "node"
+    "test": "mocha \"./build/test/**/*.js\""
   },
   "dependencies": {
     "@nesorter/lib": "*",
@@ -72,8 +47,9 @@
     "typescript": "^5.2.2"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.11",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.1.1"
+    "@types/chai": "^4.3.11",
+    "@types/mocha": "^10.0.6",
+    "chai": "^4.3.10",
+    "mocha": "^10.2.0"
   }
 }
