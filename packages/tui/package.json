@@ -1,6 +1,6 @@
 {
   "name": "@nesorter/tui",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Terminal UI for @nesorter/lib",
   "repository": "git@github.com:nesorter/monorepo.git",
   "bugs": {

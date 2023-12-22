@@ -1,5 +1,11 @@
 # @nesorter/lib
 
+## 1.0.16
+
+### Patch Changes
+
+- 30ca9c6: Add Sequencer implementation
+
 ## 1.0.15
 
 ### Patch Changes

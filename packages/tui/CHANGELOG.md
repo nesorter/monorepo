@@ -1,5 +1,13 @@
 # @nesorter/tui
 
+## 1.0.10
+
+### Patch Changes
+
+- 30ca9c6: Add Sequencer implementation
+- Updated dependencies [30ca9c6]
+  - @nesorter/lib@1.0.16
+
 ## 1.0.9
 
 ### Patch Changes
