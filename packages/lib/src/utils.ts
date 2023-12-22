@@ -84,6 +84,11 @@ export const spawnAsync = (command: string): Promise<string> => {
   });
 };
 
+export const getTrackDuration = async (filePath: string) => {
+  const rawOutput = await spawnAsync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ${sanitizeFsPath(filePath)}`);
+  return Math.round(Number(rawOutput) * 1000);
+};
+
 export const getFramesPositions = async (filePath: string, chunkDuration: number) => {
   const rawFrames = await spawnAsync(`ffprobe ${sanitizeFsPath(filePath)} -show_frames`);
   const chunks = rawFrames

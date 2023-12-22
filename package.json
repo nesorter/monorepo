@@ -14,7 +14,8 @@
     "lint": "eslint packages/**/*.ts",
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "start:tui": "turbo run start"
   },
   "workspaces": [
     "packages/*"

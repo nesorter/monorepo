@@ -1,6 +1,6 @@
-import { Streamer, FileSystemScanner, Queue, shuffle, formatNumber, ScannedItem } from '@nesorter/lib';
+import { Streamer, FileSystemScanner, Queue, shuffle, formatNumber, ScannedItem, Sequencer, getTrackDuration } from '@nesorter/lib';
 import { EventEmitter } from 'node:events';
-import { Config, ConfigSchema } from './type/Config.js';
+import { Config, ConfigSchema, SeqSchemaType } from './type/Config.js';
 import { getSecondsFromStartOfDay } from './utils/getSecondsFromStartOfDay.js';
 import { statSync } from 'node:fs';
 
@@ -15,6 +15,8 @@ export class TUI {
   private currentStartOffset = 0;
   private currentStopOffset = 0;
   private scheduleIndexes: number[] = [];
+
+  private durationsCache: Record<string, number> = {};
 
   public static create(config: Config) {
     return new TUI(config);
@@ -35,7 +37,7 @@ export class TUI {
     // entry point
     await this.hotbootPlaylists();
     this.calculateSchedule();
-    this.fillSchedule();
+    await this.fillSchedule();
     this.enableLogging();
     this.streamer.listen();
   }
@@ -136,16 +138,17 @@ export class TUI {
     }
 
     const initialScheduleItem = this.config.schedule[this.scheduleIndexes[0]];
-    const startDelay = 500;
+    const startDelay = 1;
     this.currentStartOffset = startDelay;
     this.currentStopOffset = startDelay + (initialScheduleItem.startAt + initialScheduleItem.duration) - secondsFromStartOfDay;
   }
 
-  private fillSchedule() {
+  private async fillSchedule() {
     // put tasks about starting and stoping schedule items into built-in timers
     const eventEmitter = new EventEmitter();
 
-    this.scheduleIndexes.forEach((scheduleIndex, index) => {
+    for (let index = 0; index < this.scheduleIndexes.length; index += 1) {
+      const scheduleIndex = this.scheduleIndexes[index];
       const schedule = this.config.schedule[scheduleIndex];
       const queue = new Queue(this.streamer, () => eventEmitter.emit(`end-${index}`));
 
@@ -156,8 +159,19 @@ export class TUI {
         }
 
         queue.add(files);
-        setTimeout(() => queue.startQueue(this.currentStopOffset), this.currentStartOffset);
-        setTimeout(() => queue.stopQueue(), this.currentStopOffset);
+
+        const mStart = this.currentStartOffset;
+        const mStop = this.currentStopOffset;
+
+        setTimeout(() => {
+          console.log(`TUI: Start sheduled ${index} [pl], t=${mStart}`);
+          queue.startQueue(this.currentStopOffset).catch(console.error);
+        }, this.currentStartOffset * 1000);
+
+        setTimeout(() => {
+          console.log(`TUI: Stop sheduled ${index} [pl], t=${mStop}`);
+          queue.stopQueue();
+        }, this.currentStopOffset * 1000);
 
         eventEmitter.on(`end-${index}`, () => {
           if (schedule.shouldShuffle) {
@@ -166,15 +180,89 @@ export class TUI {
 
           queue.replayQueue(this.currentStopOffset).catch(console.error);
         });
-      } else {
-        // todo for sequences
+      }
+
+      if (schedule.type === 'sequence') {
+        queue.add(await this.makeSequencedTrackList(schedule));
+
+        const mStart = this.currentStartOffset;
+        const mStop = this.currentStopOffset;
+
+        setTimeout(() => {
+          console.log(`TUI: Start sheduled ${index} [seq], t=${mStart}`);
+          queue.startQueue(this.currentStopOffset).catch(console.error);
+        }, this.currentStartOffset * 1000);
+
+        setTimeout(() => {
+          console.log(`TUI: Stop sheduled ${index} [seq], t=${mStop}`);
+          queue.stopQueue();
+        }, this.currentStopOffset * 1000);
+
+        eventEmitter.on(`end-${index}`, () => {
+          this.makeSequencedTrackList(schedule)
+            .then((tracklist) => {
+              queue.add(tracklist);
+              return queue.replayQueue(this.currentStopOffset);
+            })
+            .catch(console.error);
+        });
       }
 
       const nextSchedule = this.scheduleIndexes[index + 1];
-      if (nextSchedule) {
+      if (nextSchedule !== undefined) {
         this.currentStartOffset = this.startDelay + this.currentStopOffset;
         this.currentStopOffset = this.startDelay + schedule.duration;
       }
+    }
+  }
+
+  private async makeSequencedTrackList(schedule: SeqSchemaType) {
+    const tracklist: string[] = [];
+    const sequencer = new Sequencer({
+      durationDown: schedule.sequence.down.duration * 1000,
+      durationUp: schedule.sequence.up.duration * 1000,
+      sequenceFunction: Math.sin,
     });
+
+    let timeElapsed = 0;
+    let upPlaylist = [...this.playlists[schedule.sequence.up.playlistId]];
+    let downPlaylist = [...this.playlists[schedule.sequence.down.playlistId]];
+
+    if (schedule.sequence.up.shouldShuffle) {
+      upPlaylist = shuffle(upPlaylist);
+    }
+
+    if (schedule.sequence.down.shouldShuffle) {
+      downPlaylist = shuffle(downPlaylist);
+    }
+
+    while (timeElapsed < schedule.duration * 1000) {
+      if (upPlaylist.length === 0) {
+        upPlaylist = [...this.playlists[schedule.sequence.up.playlistId]];
+        if (schedule.sequence.up.shouldShuffle) {
+          upPlaylist = shuffle(upPlaylist);
+        }
+      }
+
+      if (downPlaylist.length === 0) {
+        downPlaylist = [...this.playlists[schedule.sequence.down.playlistId]];
+        if (schedule.sequence.down.shouldShuffle) {
+          downPlaylist = shuffle(downPlaylist);
+        }
+      }
+
+      const target = sequencer.choose(timeElapsed);
+      const scannedItem = target === 'up' ? upPlaylist.shift() : downPlaylist.shift();
+      const track = scannedItem?.fullPath || '';
+      tracklist.push(track);
+
+      if (!this.durationsCache[track]) {
+        this.durationsCache[track] = await getTrackDuration(track);
+      }
+
+      timeElapsed += this.durationsCache[track];
+    }
+
+    return tracklist;
   }
 }

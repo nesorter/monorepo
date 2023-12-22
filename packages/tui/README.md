@@ -2,7 +2,7 @@
 ## Web radio with scheduling and "playlisting"
 
 ### Requirements
-- `ffmpeg` installed on host and available in $PATH
+- `ffprobe` installed on host and available in $PATH
 
 ### How to use
 - Init Node.JS package/project
@@ -37,15 +37,15 @@ const config = {
   },
   playlists: [
     {
-      name: 'random #1',
+      id: 'random #1',
       path: '/Users/kugichka/Music/Electronics Random/Random #1 > kugi\'s'
     },
     {
-      name: 'random #2',
+      id: 'random #2',
       path: '/Users/kugichka/Music/Electronics Random/Random #2 > kugi\'s'
     },
   ],
-  maxScheduleItems: 256,
+  maxScheduledItems: 256,
   schedule: [{
     type: 'playlist',
     startAt: 0, // 00:00
