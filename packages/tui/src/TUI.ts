@@ -29,7 +29,6 @@ export class TUI {
     this.playlistIds = config.playlists.map((_) => _.id);
 
     this.validateConfig();
-    this.enableLogging();
   }
 
   public async start() {
@@ -37,6 +36,7 @@ export class TUI {
     await this.hotbootPlaylists();
     this.calculateSchedule();
     this.fillSchedule();
+    this.enableLogging();
     this.streamer.listen();
   }
 
