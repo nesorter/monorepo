@@ -1,48 +1,52 @@
-export type Config = {
-  server: {
-    port: number;
-    mount: string;
-  };
-  library: {
-    root: string;
-  };
-  playlists: {
-    id: string;
-    path: string;
-  }[];
-  maxScheduledItems: number;
-  schedule: (
-    | {
-        type: 'playlist';
-        /* seconds from day start */
-        startAt: number;
-        /* seconds */
-        duration: number;
-        playlistId: string;
-        shouldShuffle?: boolean;
-      }
-    | {
-        type: 'sequence';
-        /* seconds from day start */
-        startAt: number;
-        /* seconds */
-        duration: number;
-        sequence: {
-          up: {
-            duration: number;
-            playlistId: string;
-            shouldShuffle?: boolean;
-          };
-          down: {
-            duration: number;
-            playlistId: string;
-            shouldShuffle?: boolean;
-          };
-        };
-      }
-  )[];
-  logger: {
-    debug: boolean;
-    info: boolean;
-  };
-};
+import { z } from 'zod';
+
+export const ConfigSchema = z.object({
+  library: z.object({
+    root: z.string(),
+  }),
+  logger: z.object({
+    debug: z.boolean(),
+    info: z.boolean(),
+  }),
+  maxScheduledItems: z.number(),
+  playlists: z.array(
+    z.object({
+      id: z.string(),
+      path: z.string(),
+    }),
+  ),
+  schedule: z.array(
+    z.discriminatedUnion('type', [
+      z.object({
+        duration: z.number(),
+        playlistId: z.string(),
+        shouldShuffle: z.boolean().optional(),
+        startAt: z.number(),
+        type: z.literal('playlist'),
+      }),
+      z.object({
+        duration: z.number(),
+        sequence: z.object({
+          down: z.object({
+            duration: z.number(),
+            playlistId: z.string(),
+            shouldShuffle: z.boolean().optional(),
+          }),
+          up: z.object({
+            duration: z.number(),
+            playlistId: z.string(),
+            shouldShuffle: z.boolean().optional(),
+          }),
+        }),
+        startAt: z.number(),
+        type: z.literal('sequence'),
+      }),
+    ]),
+  ),
+  server: z.object({
+    mount: z.string(),
+    port: z.number(),
+  }),
+});
+
+export type Config = z.infer<typeof ConfigSchema>;

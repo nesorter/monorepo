@@ -1,7 +1,8 @@
 import { Streamer, FileSystemScanner, Queue, shuffle, formatNumber, ScannedItem } from '@nesorter/lib';
 import { EventEmitter } from 'node:events';
-import type { Config } from './type/Config';
+import { Config, ConfigSchema } from './type/Config.js';
 import { getSecondsFromStartOfDay } from './utils/getSecondsFromStartOfDay.js';
+import { statSync } from 'node:fs';
 
 export class TUI {
   public config: Config;
@@ -25,10 +26,9 @@ export class TUI {
     process.env.LOG_DEBUG = config.logger.debug ? 'true' : 'false';
 
     this.config = config;
-    this.streamer = new Streamer(config.server.port, config.server.mount);
-    this.playlistIds = config.playlists.map((_) => _.id);
-
     this.validateConfig();
+
+    this.streamer = new Streamer(config.server.port, config.server.mount);
   }
 
   public async start() {
@@ -41,11 +41,34 @@ export class TUI {
   }
 
   private validateConfig() {
-    // TODO: validate config by schema
-    // TODO: validate playlist paths in config
-    // TODO: validate schedule durations
+    // validate config by schema
+    const result = ConfigSchema.safeParse(this.config);
+    if (!result.success) {
+      throw new Error(`CONF_VERIFY_ERR: Wrong config: ${result.error.message}`);
+    }
+
+    // validate playlist paths in config
+    this.config.playlists.forEach((item) => {
+      try {
+        statSync(item.path);
+      } catch (e) {
+        throw new Error(`PL_PATHS_VERIFY_ERR: ${(e as Error).message}`);
+      }
+    });
+
+    // validate schedule durations
+    this.config.schedule.forEach((item, index) => {
+      this.config.schedule
+        .filter((itemTo, indexTo) => indexTo > index && itemTo !== undefined)
+        .forEach((itemTo, indexTo) => {
+          if (item.startAt + item.duration > itemTo.startAt) {
+            throw new Error(`SCHED_TIMINGS_VERIFY_ERR: schedules #${index} & #${indexTo} are overlapped`);
+          }
+        });
+    });
 
     // check that playlistIds in schedules are correct
+    this.playlistIds = this.config.playlists.map((_) => _.id);
     this.config.schedule.forEach((item, index) => {
       if (item.type === 'playlist') {
         if (!this.playlistIds.includes(item.playlistId)) {

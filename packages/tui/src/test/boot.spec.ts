@@ -107,7 +107,7 @@ describe('Startup fails', () => {
         playlists: [
           {
             id: 'test',
-            path: './packages',
+            path: '/',
           },
         ],
         schedule: [
