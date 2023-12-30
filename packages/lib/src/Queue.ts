@@ -1,7 +1,8 @@
-import { readFile } from 'fs/promises';
+import { readFile, writeFile, rm } from 'fs/promises';
 import { Streamer } from './Streamer.js';
 import { getFramesPositions, sleep } from './utils.js';
 import { parseBuffer } from 'music-metadata';
+import { nanoid } from 'nanoid';
 
 const CHUNK_DURATION = 1000;
 const CHUNK_OVERLAP_DURATION = 5;
@@ -30,13 +31,19 @@ export class Queue {
     const parsedData = await parseBuffer(buffer, undefined, {
       duration: true,
       includeChapters: true,
-      skipCovers: true,
     });
 
+    const coverId = nanoid(16);
+    this.streamer.allowedCoverId.push(`${coverId}.jpg`);
     this.streamer.trackMeta = {
       artist: parsedData.common.artist ?? 'unknown',
+      cover: `/cover/${coverId}.jpg`,
       title: parsedData.common.title ?? 'unknown',
     };
+    if (parsedData.common.picture?.at(0)) {
+      console.log(`Queue: Write cover: /tmp/${coverId}.jpg`);
+      await writeFile(`/tmp/${coverId}.jpg`, parsedData.common.picture[0].data);
+    }
 
     if (process.env.LOG_INFO === 'true') {
       const { artist, title } = parsedData?.common || {};
@@ -52,6 +59,11 @@ export class Queue {
 
       this.streamer.input.write(buffer.subarray(position.startByte, position.endByte));
       await sleep(CHUNK_DURATION - CHUNK_OVERLAP_DURATION);
+    }
+
+    if (parsedData.common.picture?.at(0)) {
+      console.log(`Queue: Delete cover: /tmp/${coverId}.jpg`);
+      await rm(`/tmp/${coverId}.jpg`);
     }
   }
 

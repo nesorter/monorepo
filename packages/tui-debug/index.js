@@ -10,7 +10,7 @@ TUI.create({
     info: true,
   },
   library: {
-    root: '/Users/kugichka/samples',
+    root: '/Users/kugichka/Music',
   },
   playlists: [
     {
@@ -56,4 +56,4 @@ TUI.create({
   ],
 }).start().then(() => {
   console.log('Event: server initialized');
-});
+}).catch((err) => console.error(err));

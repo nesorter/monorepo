@@ -7,15 +7,19 @@ export class Streamer {
   broadcast: BroadcastStream;
   input: PassThrough;
   port: number;
+  mountpoint: string;
 
   sended = 0;
   trackMeta = {
     artist: 'unknown',
+    cover: '/cover/404',
     title: 'unknown',
   };
+  allowedCoverId = ['404'];
 
   constructor(port: number, mountpoint: string) {
     this.port = port;
+    this.mountpoint = mountpoint;
     this.input = new PassThrough({
       readableHighWaterMark: 1440 * 40,
       writableHighWaterMark: 1440 * 40,
@@ -23,7 +27,6 @@ export class Streamer {
     this.broadcast = new BroadcastStream(this.input);
     this.app = express();
     this.app.disable('x-powered-by');
-    this.setupRouting(mountpoint);
 
     const { plug } = this.broadcast.subscribe(false, 0);
     plug.on('data', (chunk: Buffer) => {
@@ -32,12 +35,23 @@ export class Streamer {
   }
 
   listen() {
+    this.setupRouting(this.mountpoint);
     this.app.listen(this.port);
   }
 
   setupRouting(mountpoint: string) {
     this.app.get('/trackinfo', (_req, res) => {
       res.json(this.trackMeta);
+    });
+
+    this.app.get(`/cover/:id`, (req, res) => {
+      console.log(req.params.id);
+      if (!this.allowedCoverId.includes(req.params.id)) {
+        res.status(404).json({ message: 'Wrong id' });
+        return;
+      }
+
+      res.sendFile(`/tmp/${req.params.id}`);
     });
 
     this.app.get(mountpoint, (req, res) => {

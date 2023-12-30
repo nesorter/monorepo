@@ -35,9 +35,16 @@ export class TUI {
 
   public async start() {
     // entry point
+    console.log('TUI: Entrypoint: Hotboot playlists');
     await this.hotbootPlaylists();
+
+    console.log('TUI: Entrypoint: Schedules calc');
     this.calculateSchedule();
+
+    console.log('TUI: Entrypoint: Schedules fill');
     await this.fillSchedule();
+
+    console.log('TUI: Entrypoint: Hotboot stream server');
     this.enableLogging();
     this.streamer.listen();
   }
