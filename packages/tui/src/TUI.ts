@@ -1,6 +1,6 @@
 import { Streamer, FileSystemScanner, Queue, shuffle, formatNumber, ScannedItem, Sequencer, getTrackDuration } from '@nesorter/lib';
 import { EventEmitter } from 'node:events';
-import { Config, ConfigSchema, SeqSchemaType } from './type/Config.js';
+import { Config, ConfigSchema, PlOneOfSchemaType, PlSchemaType, SeqSchemaType } from './type/Config.js';
 import { getSecondsFromStartOfDay } from './utils/getSecondsFromStartOfDay.js';
 import { statSync } from 'node:fs';
 
@@ -80,6 +80,13 @@ export class TUI {
         return;
       }
 
+      if (item.type === 'playlists') {
+        if (!item.playlistIds.every((plId) => this.playlistIds.includes(plId))) {
+          throw new Error(`PL_VERIFY_ERR: Wrong playlistIds for schedule #${index}, startAt: ${item.startAt}`);
+        }
+        return;
+      }
+
       if (item.type === 'sequence') {
         if (!this.playlistIds.includes(item.sequence.down.playlistId)) {
           throw new Error(`PL_VERIFY_ERR: Wrong playlistId for schedule #${index}, startAt: ${item.startAt}, sequence stage: down`);
@@ -148,65 +155,33 @@ export class TUI {
     const eventEmitter = new EventEmitter();
 
     for (let index = 0; index < this.scheduleIndexes.length; index += 1) {
+      const mStart = this.currentStartOffset;
+      const mStop = this.currentStopOffset;
       const scheduleIndex = this.scheduleIndexes[index];
       const schedule = this.config.schedule[scheduleIndex];
       const queue = new Queue(this.streamer, () => eventEmitter.emit(`end-${index}`));
 
-      if (schedule.type === 'playlist') {
-        let files = this.playlists[schedule.playlistId].map((_) => _.fullPath);
-        if (schedule.shouldShuffle) {
-          files = shuffle(files);
-        }
+      const files = await this.getScheduleFiles(schedule);
+      queue.add(files);
 
-        queue.add(files);
+      setTimeout(() => {
+        console.log(`TUI: Start sheduled ${index} [${schedule.type}], t=${mStart}`);
+        queue.startQueue(this.currentStopOffset).catch(console.error);
+      }, this.currentStartOffset * 1000);
 
-        const mStart = this.currentStartOffset;
-        const mStop = this.currentStopOffset;
+      setTimeout(() => {
+        console.log(`TUI: Stop sheduled ${index} [${schedule.type}], t=${mStop}`);
+        queue.stopQueue();
+      }, this.currentStopOffset * 1000);
 
-        setTimeout(() => {
-          console.log(`TUI: Start sheduled ${index} [pl], t=${mStart}`);
-          queue.startQueue(this.currentStopOffset).catch(console.error);
-        }, this.currentStartOffset * 1000);
-
-        setTimeout(() => {
-          console.log(`TUI: Stop sheduled ${index} [pl], t=${mStop}`);
-          queue.stopQueue();
-        }, this.currentStopOffset * 1000);
-
-        eventEmitter.on(`end-${index}`, () => {
-          if (schedule.shouldShuffle) {
-            queue.add(shuffle(files));
-          }
-
-          queue.replayQueue(this.currentStopOffset).catch(console.error);
-        });
-      }
-
-      if (schedule.type === 'sequence') {
-        queue.add(await this.makeSequencedTrackList(schedule));
-
-        const mStart = this.currentStartOffset;
-        const mStop = this.currentStopOffset;
-
-        setTimeout(() => {
-          console.log(`TUI: Start sheduled ${index} [seq], t=${mStart}`);
-          queue.startQueue(this.currentStopOffset).catch(console.error);
-        }, this.currentStartOffset * 1000);
-
-        setTimeout(() => {
-          console.log(`TUI: Stop sheduled ${index} [seq], t=${mStop}`);
-          queue.stopQueue();
-        }, this.currentStopOffset * 1000);
-
-        eventEmitter.on(`end-${index}`, () => {
-          this.makeSequencedTrackList(schedule)
-            .then((tracklist) => {
-              queue.add(tracklist);
-              return queue.replayQueue(this.currentStopOffset);
-            })
-            .catch(console.error);
-        });
-      }
+      eventEmitter.on(`end-${index}`, () => {
+        this.getScheduleFiles(schedule)
+          .then((files) => {
+            queue.add(files);
+            queue.replayQueue(this.currentStopOffset).catch(console.error);
+          })
+          .catch(console.error);
+      });
 
       const nextSchedule = this.scheduleIndexes[index + 1];
       if (nextSchedule !== undefined) {
@@ -214,6 +189,36 @@ export class TUI {
         this.currentStopOffset = this.startDelay + schedule.duration;
       }
     }
+  }
+
+  private async getScheduleFiles(schedule: SeqSchemaType | PlSchemaType | PlOneOfSchemaType) {
+    if (schedule.type === 'sequence') {
+      return await this.makeSequencedTrackList(schedule);
+    }
+
+    if (schedule.type === 'playlists') {
+      let files = schedule.playlistIds.reduce((acc, cur) => {
+        const plFiles = this.playlists[cur].map((_) => _.fullPath);
+        return [...acc, ...plFiles];
+      }, [] as string[]);
+
+      if (schedule.shouldShuffle) {
+        files = shuffle(files);
+      }
+
+      return files;
+    }
+
+    if (schedule.type === 'playlist') {
+      let files = this.playlists[schedule.playlistId].map((_) => _.fullPath);
+      if (schedule.shouldShuffle) {
+        files = shuffle(files);
+      }
+
+      return files;
+    }
+
+    return [] as string[];
   }
 
   private async makeSequencedTrackList(schedule: SeqSchemaType) {

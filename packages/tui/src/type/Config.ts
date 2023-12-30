@@ -8,6 +8,14 @@ const PlSchema = z.object({
   type: z.literal('playlist'),
 });
 
+const PlOneOfSchema = z.object({
+  duration: z.number(),
+  playlistIds: z.array(z.string()),
+  shouldShuffle: z.boolean().optional(),
+  startAt: z.number(),
+  type: z.literal('playlists'),
+});
+
 const SeqSchema = z.object({
   duration: z.number(),
   sequence: z.object({
@@ -41,7 +49,7 @@ export const ConfigSchema = z.object({
       path: z.string(),
     }),
   ),
-  schedule: z.array(z.discriminatedUnion('type', [PlSchema, SeqSchema])),
+  schedule: z.array(z.discriminatedUnion('type', [PlSchema, SeqSchema, PlOneOfSchema])),
   server: z.object({
     mount: z.string(),
     port: z.number(),
@@ -51,3 +59,4 @@ export const ConfigSchema = z.object({
 export type Config = z.infer<typeof ConfigSchema>;
 export type PlSchemaType = z.infer<typeof PlSchema>;
 export type SeqSchemaType = z.infer<typeof SeqSchema>;
+export type PlOneOfSchemaType = z.infer<typeof PlOneOfSchema>;
