@@ -1,5 +1,11 @@
 # @nesorter/lib
 
+## 1.0.17
+
+### Patch Changes
+
+- 05ef5fd: feature: add serving track picture
+
 ## 1.0.16
 
 ### Patch Changes

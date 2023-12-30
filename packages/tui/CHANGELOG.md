@@ -1,5 +1,13 @@
 # @nesorter/tui
 
+## 1.1.1
+
+### Patch Changes
+
+- 05ef5fd: feature: add serving track picture
+- Updated dependencies [05ef5fd]
+  - @nesorter/lib@1.0.17
+
 ## 1.1.0
 
 ### Minor Changes
