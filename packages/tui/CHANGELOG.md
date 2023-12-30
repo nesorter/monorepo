@@ -1,5 +1,11 @@
 # @nesorter/tui
 
+## 1.1.0
+
+### Minor Changes
+
+- f7821bf: add scheduling multiple playlist in one schedule
+
 ## 1.0.10
 
 ### Patch Changes
