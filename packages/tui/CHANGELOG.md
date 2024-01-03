@@ -1,5 +1,12 @@
 # @nesorter/tui
 
+## 1.1.4
+
+### Patch Changes
+
+- a75d8dd: chore: typo
+- aac01f9: chore: typo
+
 ## 1.1.3
 
 ### Patch Changes
