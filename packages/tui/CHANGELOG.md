@@ -1,5 +1,11 @@
 # @nesorter/tui
 
+## 1.1.2
+
+### Patch Changes
+
+- b95b897: fix scheduler bug
+
 ## 1.1.1
 
 ### Patch Changes
