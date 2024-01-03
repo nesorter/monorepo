@@ -159,13 +159,12 @@ export class TUI {
 
   private async fillSchedule() {
     // put tasks about starting and stoping schedule items into built-in timers
-    const eventEmitter = new EventEmitter();
-
     for (let index = 0; index < this.scheduleIndexes.length; index += 1) {
       const mStart = this.currentStartOffset;
       const mStop = this.currentStopOffset;
       const scheduleIndex = this.scheduleIndexes[index];
       const schedule = this.config.schedule[scheduleIndex];
+      const eventEmitter = new EventEmitter();
       const queue = new Queue(this.streamer, () => eventEmitter.emit(`end-${index}`));
 
       const files = await this.getScheduleFiles(schedule);
