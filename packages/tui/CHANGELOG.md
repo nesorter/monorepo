@@ -1,5 +1,11 @@
 # @nesorter/tui
 
+## 1.1.3
+
+### Patch Changes
+
+- 222deeb: chore: bug-o-fix
+
 ## 1.1.2
 
 ### Patch Changes
