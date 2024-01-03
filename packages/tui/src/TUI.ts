@@ -160,6 +160,7 @@ export class TUI {
   private async fillSchedule() {
     // put tasks about starting and stoping schedule items into built-in timers
     for (let index = 0; index < this.scheduleIndexes.length; index += 1) {
+      let shouldEnd = false;
       const mStart = this.currentStartOffset;
       const mStop = this.currentStopOffset;
       const scheduleIndex = this.scheduleIndexes[index];
@@ -176,11 +177,19 @@ export class TUI {
       }, this.currentStartOffset * 1000);
 
       setTimeout(() => {
+        shouldEnd = true;
         console.log(`TUI: Stop sheduled ${index} [${schedule.type}], t=${mStop}`);
         queue.stopQueue();
+        queue.add([]); // clears queue
       }, this.currentStopOffset * 1000);
 
       eventEmitter.on(`end-${index}`, () => {
+        if (shouldEnd) {
+          return;
+        }
+
+        console.log(`TUI: Sheduled queue got onEnd ${index} [${schedule.type}], start replayQueue`);
+
         this.getScheduleFiles(schedule)
           .then((files) => {
             queue.add(files);
