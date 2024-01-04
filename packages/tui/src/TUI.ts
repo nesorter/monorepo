@@ -11,7 +11,7 @@ export class TUI {
   private playlistIds: string[] = [];
   private playlists: Record<string, ScannedItem[]> = {};
 
-  private startDelay = 500; // ms
+  private startDelay = 1; // s
   private currentStartOffset = 0;
   private currentStopOffset = 0;
   private scheduleIndexes: number[] = [];
@@ -42,7 +42,7 @@ export class TUI {
     this.calculateSchedule();
 
     console.log('TUI: Entrypoint: Schedules fill');
-    await this.fillSchedule();
+    this.fillSchedule();
 
     console.log('TUI: Entrypoint: Hotboot stream server');
     this.enableLogging();
@@ -157,7 +157,10 @@ export class TUI {
     this.currentStopOffset = startDelay + (initialScheduleItem.startAt + initialScheduleItem.duration) - secondsFromStartOfDay;
   }
 
-  private async fillSchedule() {
+  private fillSchedule() {
+    const eventEmitter = new EventEmitter();
+    const queue = new Queue(this.streamer, () => eventEmitter.emit(`end`));
+
     // put tasks about starting and stoping schedule items into built-in timers
     for (let index = 0; index < this.scheduleIndexes.length; index += 1) {
       let shouldEnd = false;
@@ -165,25 +168,10 @@ export class TUI {
       const mStop = this.currentStopOffset;
       const scheduleIndex = this.scheduleIndexes[index];
       const schedule = this.config.schedule[scheduleIndex];
-      const eventEmitter = new EventEmitter();
-      const queue = new Queue(this.streamer, () => eventEmitter.emit(`end-${index}`));
 
-      const files = await this.getScheduleFiles(schedule);
-      queue.add(files);
+      console.log(`TUI: Sched #${index}: start=${mStart}, stop=${mStop}`);
 
-      setTimeout(() => {
-        console.log(`TUI: Start sheduled ${index} [${schedule.type}], t=${mStart}`);
-        queue.startQueue(this.currentStopOffset).catch(console.error);
-      }, this.currentStartOffset * 1000);
-
-      setTimeout(() => {
-        shouldEnd = true;
-        console.log(`TUI: Stop sheduled ${index} [${schedule.type}], t=${mStop}`);
-        queue.stopQueue();
-        queue.add([]); // clears queue
-      }, this.currentStopOffset * 1000);
-
-      eventEmitter.on(`end-${index}`, () => {
+      const onEndHandler = () => {
         if (shouldEnd) {
           return;
         }
@@ -193,15 +181,39 @@ export class TUI {
         this.getScheduleFiles(schedule)
           .then((files) => {
             queue.add(files);
-            queue.replayQueue(this.currentStopOffset).catch(console.error);
+            queue.replayQueue(schedule.duration).catch(console.error);
           })
           .catch(console.error);
-      });
+      };
+
+      setTimeout(() => {
+        console.log(`TUI: Start sheduled ${index} [${schedule.type}], t=${mStart}`);
+
+        this.getScheduleFiles(schedule)
+          .then((files) => {
+            queue.add(files);
+            queue.startQueue(schedule.duration).catch(console.error);
+          })
+          .catch(console.error);
+
+        eventEmitter.addListener(`end`, onEndHandler);
+      }, mStart * 1000);
+
+      setTimeout(
+        () => {
+          shouldEnd = true;
+          console.log(`TUI: Stop sheduled ${index} [${schedule.type}], t=${mStop}`);
+          queue.stopQueue();
+          queue.add([]); // clears queue
+          eventEmitter.removeListener('end', onEndHandler);
+        },
+        mStop * 1000 - 100,
+      );
 
       const nextSchedule = this.scheduleIndexes[index + 1];
       if (nextSchedule !== undefined) {
         this.currentStartOffset = this.startDelay + this.currentStopOffset;
-        this.currentStopOffset = this.startDelay + schedule.duration;
+        this.currentStopOffset = this.currentStartOffset + schedule.duration;
       }
     }
   }

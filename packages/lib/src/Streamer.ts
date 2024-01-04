@@ -45,7 +45,6 @@ export class Streamer {
     });
 
     this.app.get(`/cover/:id`, (req, res) => {
-      console.log(req.params.id);
       if (!this.allowedCoverId.includes(req.params.id)) {
         res.status(404).json({ message: 'Wrong id' });
         return;
