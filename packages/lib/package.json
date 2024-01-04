@@ -1,6 +1,6 @@
 {
   "name": "@nesorter/lib",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "description": "Standalone solution for audio streaming",
   "main": "./build/index.js",
   "type": "module",

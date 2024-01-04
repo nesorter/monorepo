@@ -1,5 +1,11 @@
 # @nesorter/lib
 
+## 1.0.18
+
+### Patch Changes
+
+- d2b573e: chore: bug-o-fix
+
 ## 1.0.17
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @nesorter/tui
 
+## 1.1.5
+
+### Patch Changes
+
+- d2b573e: chore: bug-o-fix
+- Updated dependencies [d2b573e]
+  - @nesorter/lib@1.0.18
+
 ## 1.1.4
 
 ### Patch Changes
